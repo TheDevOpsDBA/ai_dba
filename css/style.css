@@ -400,3 +400,17 @@ select{
     overflow:hidden;
     min-height:150px;
 }
+
+.local-run-banner{
+    background: linear-gradient(135deg, #0f3460, #16213e);
+    border: 1px solid #7fdbca;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: #7fdbca;
+}
+
+.local-run-banner p{
+    margin: 0;
+}

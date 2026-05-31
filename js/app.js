@@ -101,6 +101,12 @@ function renderSection() {
     } else {
         editor.setValue("# No examples available");
     }
+
+    // Hybrid mode: toggle UI based on section mode
+    const isLocalMode = section.mode === "local";
+    document.getElementById("runButtons").style.display = isLocalMode ? "none" : "flex";
+    document.getElementById("copyButton").style.display = isLocalMode ? "inline-block" : "none";
+    document.getElementById("localRunBanner").style.display = isLocalMode ? "block" : "none";
 }
 
 function renderTabs(section, activeIndex) {
@@ -237,6 +243,14 @@ async function runSelected() {
     }
 }
 
+function copyToClipboard() {
+    const code = editor.getValue();
+    navigator.clipboard.writeText(code).then(() => {
+        const output = document.getElementById("output");
+        output.textContent = "\u2713 Copied to clipboard! Paste and run in your local Python environment.";
+    });
+}
+
 function clearOutput() {
     document.getElementById("output").textContent = "";
 }
@@ -362,7 +376,7 @@ async function sendChat() {
     const output = document.getElementById("output").textContent || "(no output yet)";
     const description = document.getElementById("description").innerText || "";
 
-    const chatPrompt = "You are a helpful AI and Python tutor for SQL Server DBAs learning to apply AI/ML, LangChain, RAG, and LLMs to database administration tasks. You ONLY answer questions related to Python programming, SQL Server, AI/ML, the code shown below, or the course topic. If the question is unrelated, politely decline.\n\nSection: \"" + section.title + "\"\n\nDescription:\n" + description + "\n\nCode in editor:\n```python\n" + code + "\n```\n\nExecution output:\n```\n" + output + "\n```\n\nStudent asks: \"" + question + "\"\n\nGive a clear, helpful answer considering the code, its output, and the section context. Refer to specific lines if relevant. Keep the answer concise but complete (4-6 sentences).";
+    const chatPrompt = "You are a helpful AI and Python tutor for SQL Server DBAs learning to apply AI/ML, LangChain, RAG, and LLMs to database administration tasks. You ONLY answer questions related to Python programming, SQL Server, AI/ML, the code shown below, or the course topic. If the question is unrelated, politely decline.\n\nSection: \"" + section.title + "\"\n\nDescription:\n" + description + "\n\nCode in editor:\n`python\n" + code + "\n`\n\nExecution output:\n`\n" + output + "\n`\n\nStudent asks: \"" + question + "\"\n\nGive a clear, helpful answer considering the code, its output, and the section context. Refer to specific lines if relevant. Keep the answer concise but complete (4-6 sentences).";
 
     try {
         const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
@@ -387,9 +401,9 @@ async function sendChat() {
             answer = answer
                 .replace(/\n\n/g, "<br><br>")
                 .replace(/\n/g, "<br>")
-                .replace(/`([^`]+)`/g, "<code>$1</code>")
-                .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-                .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+                .replace(/([^]+)/g, "<code></code>")
+                .replace(/\*\*([^*]+)\*\*/g, "<strong></strong>")
+                .replace(/\*([^*]+)\*/g, "<em></em>");
             addChatMessage(answer, "bot");
         } else {
             loadingMsg.remove();
@@ -416,8 +430,3 @@ document.addEventListener("keydown", function(e) {
         previousSection();
     }
 });
-
-
-
-
-

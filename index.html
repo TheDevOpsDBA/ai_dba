@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -48,9 +48,15 @@
 <div id="exampleTabs"></div>
 <textarea id="editor"></textarea>
 <div class="action-row">
+<div id="runButtons" style="display:flex;gap:8px;">
 <button onclick="runCode()">&#x25B6; Run All</button>
 <button onclick="runSelected()">&#x25B6; Run Selected</button>
-<button onclick="clearOutput()">&#x1F9F9; Clear Output</button>
+</div>
+<button id="copyButton" onclick="copyToClipboard()" style="display:none;">&#x1F4CB; Copy to Clipboard</button>
+<button onclick="clearOutput()">&#x1F9F9; Clear</button>
+</div>
+<div id="localRunBanner" class="local-run-banner" style="display:none;">
+<p>&#x1F4BB; <strong>Run Locally:</strong> Copy this script and run it in your VS Code or terminal. Ensure your lab environment is set up as described in Module 0.</p>
 </div>
 <pre id="output"></pre>
 <div class="chat-panel">
