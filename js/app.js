@@ -25,9 +25,6 @@ async function initializeApp() {
 
     pyodide = await loadPyodide();
 
-    // Pre-load common packages used in the course
-    await pyodide.loadPackage(["pandas", "numpy", "matplotlib", "scikit-learn"]);
-
     loadModules();
 }
 
@@ -180,7 +177,21 @@ async function runCode() {
             }
         });
 
-        await pyodide.runPythonAsync(editor.getValue());
+        // Auto-load packages based on imports in the code
+        const code = editor.getValue();
+        const imports = code.match(/^(?:import|from)\s+(\w+)/gm) || [];
+        const pkgMap = {"pandas":"pandas","numpy":"numpy","matplotlib":"matplotlib","sklearn":"scikit-learn","scipy":"scipy"};
+        const needed = [];
+        for (const imp of imports) {
+            const mod = imp.replace(/^(?:import|from)\s+/, "").split(".")[0];
+            if (pkgMap[mod] && !pyodide.loadedPackages[pkgMap[mod]]) needed.push(pkgMap[mod]);
+        }
+        if (needed.length > 0) {
+            output.textContent = "Loading packages: " + needed.join(", ") + "...\n";
+            await pyodide.loadPackage(needed);
+        }
+
+        await pyodide.runPythonAsync(code);
 
     } catch (error) {
         output.textContent = error;
@@ -205,6 +216,19 @@ async function runSelected() {
                 output.textContent += message + "\n";
             }
         });
+
+        // Auto-load packages for selected code
+        const selImports = selected.match(/^(?:import|from)\s+(\w+)/gm) || [];
+        const selPkgMap = {"pandas":"pandas","numpy":"numpy","matplotlib":"matplotlib","sklearn":"scikit-learn","scipy":"scipy"};
+        const selNeeded = [];
+        for (const imp of selImports) {
+            const mod = imp.replace(/^(?:import|from)\s+/, "").split(".")[0];
+            if (selPkgMap[mod] && !pyodide.loadedPackages[selPkgMap[mod]]) selNeeded.push(selPkgMap[mod]);
+        }
+        if (selNeeded.length > 0) {
+            output.textContent = "Loading packages: " + selNeeded.join(", ") + "...\n";
+            await pyodide.loadPackage(selNeeded);
+        }
 
         await pyodide.runPythonAsync(selected);
 
@@ -390,4 +414,7 @@ document.addEventListener("keydown", function(e) {
         previousSection();
     }
 });
+
+
+
 
