@@ -1,4 +1,4 @@
-let editor;
+﻿let editor;
 let pyodide;
 
 let currentModule = 0;
@@ -24,6 +24,9 @@ async function initializeApp() {
     );
 
     pyodide = await loadPyodide();
+
+    // Pre-load common packages used in the course
+    await pyodide.loadPackage(["pandas", "numpy", "matplotlib", "scikit-learn"]);
 
     loadModules();
 }
@@ -387,3 +390,4 @@ document.addEventListener("keydown", function(e) {
         previousSection();
     }
 });
+
