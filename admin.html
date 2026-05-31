@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -100,17 +100,10 @@ let authenticated = false;
 let currentModule = 0;
 let currentSection = 0;
 
-async function login() {
-    const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            username: document.getElementById('username').value,
-            password: document.getElementById('password').value
-        })
-    });
-    const data = await response.json();
-    if (data.success) {
+function login() {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    if (user === 'akkos' && pass === 'Alexa@12345') {
         authenticated = true;
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('presenterContent').style.display = 'block';
@@ -156,7 +149,8 @@ function renderPresenter() {
     document.getElementById('sectionTitle').textContent = section.title;
     document.getElementById('fullDescription').innerHTML = section.description;
     document.getElementById('syntaxArea').textContent = section.syntax;
-    document.getElementById('scriptArea').value = section.script || '';
+    var savedNote = localStorage.getItem('notes_' + currentModule + '_' + currentSection);
+    document.getElementById('scriptArea').value = savedNote || section.script || '';
     document.getElementById('saveStatus').textContent = '';
     var diagramArea = document.getElementById('diagramArea');
     if (typeof getDiagramSVG === 'function' && typeof sectionDiagramTypes !== 'undefined') {
@@ -188,21 +182,15 @@ function nextSection() {
     loadSections();
 }
 
-async function saveScript() {
+function saveScript() {
     if (!authenticated) { alert('Login First'); return; }
-    var payload = {
-        module: currentModule,
-        section: currentSection,
-        script: document.getElementById('scriptArea').value
-    };
-    var res = await fetch('/api/save-script', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload)
-    });
-    var data = await res.json();
-    document.getElementById('saveStatus').textContent = data.success ? '\u2713 Saved' : '\u2717 Failed';
+    var key = 'notes_' + currentModule + '_' + currentSection;
+    localStorage.setItem(key, document.getElementById('scriptArea').value);
+    document.getElementById('saveStatus').textContent = '\u2713 Saved locally';
 }
 </script>
 </body>
 </html>
+
+
+
