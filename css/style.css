@@ -373,3 +373,30 @@ select{
     color:#ccc;
     line-height:1.5;
 }
+
+/* Resizable panels */
+.CodeMirror{
+    resize:vertical;
+    overflow:auto !important;
+    min-height:200px;
+}
+
+#output{
+    resize:vertical;
+    overflow:auto;
+    min-height:80px;
+    max-height:500px;
+}
+
+.chat-messages, #chatMessages{
+    resize:vertical;
+    overflow-y:auto;
+    min-height:80px;
+    max-height:400px;
+}
+
+.chat-panel{
+    resize:vertical;
+    overflow:hidden;
+    min-height:150px;
+}
