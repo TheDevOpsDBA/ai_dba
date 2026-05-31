@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Presenter Portal - AI for SQL Server DBAs</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.admin-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 12px;
+}
+.presenter-panel {
+    background: #0f3460;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #2a2a4a;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+.login-panel {
+    background: #0f3460;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #2a2a4a;
+    max-width: 400px;
+    margin: 40px auto;
+}
+.login-panel input {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 12px;
+    background: #111827;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+#presenterContent { display: none; }
+#loginSection { display: block; }
+.nav-bar {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: #16213e;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.section-title {
+    color: #7fdbca;
+    font-size: 18px;
+    margin: 0 0 15px 0;
+    border-bottom: 1px solid #2a2a4a;
+    padding-bottom: 8px;
+}
+</style>
+</head>
+<body>
+<header>
+<h1>&#x1F393; Presenter Portal - AI for SQL Server DBAs</h1>
+</header>
+<div id="loginSection">
+<div class="login-panel">
+<h2 style="color:#7fdbca; margin-top:0;">Login</h2>
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()" style="width:100%;">Login</button>
+</div>
+</div>
+<div id="presenterContent">
+<div class="nav-bar">
+<select id="moduleSelect"></select>
+<select id="sectionSelect"></select>
+<button onclick="prevSection()">&#x2B05; Back</button>
+<button onclick="nextSection()">Next &#x27A1;</button>
+</div>
+<div class="admin-layout">
+<div class="presenter-panel">
+<h3 class="section-title" id="sectionTitle"></h3>
+<div id="diagramArea"></div>
+<div id="fullDescription"></div>
+<div id="syntaxArea" style="margin-top:20px; background:#111827; padding:12px; border-radius:8px; font-family:Consolas; color:#7fdbca; white-space:pre-wrap;"></div>
+</div>
+<div class="presenter-panel">
+<h3 class="section-title" style="color:#e94560;">Presenter Notes</h3>
+<textarea id="scriptArea" style="width:100%; height:350px; background:#111827; color:white; border:1px solid #333; border-radius:8px; padding:12px; font-family:Consolas; font-size:14px; resize:vertical;"></textarea>
+<div style="margin-top:12px; display:flex; gap:10px;">
+<button onclick="saveScript()">&#x1F4BE; Save Notes</button>
+<span id="saveStatus" style="color:#7fdbca; font-size:13px; align-self:center;"></span>
+</div>
+</div>
+</div>
+</div>
+<script src="data/courses.js"></script>
+<script src="js/diagrams.js"></script>
+<script>
+let authenticated = false;
+let currentModule = 0;
+let currentSection = 0;
+
+async function login() {
+    const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        })
+    });
+    const data = await response.json();
+    if (data.success) {
+        authenticated = true;
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('presenterContent').style.display = 'block';
+        loadModules();
+    } else {
+        alert('Invalid Credentials');
+    }
+}
+
+function loadModules() {
+    const mod = document.getElementById('moduleSelect');
+    mod.innerHTML = '';
+    courseData.modules.forEach((m, i) => {
+        mod.innerHTML += '<option value="' + i + '">' + m.title + '</option>';
+    });
+    mod.value = currentModule;
+    mod.onchange = function() {
+        currentModule = parseInt(this.value);
+        currentSection = 0;
+        loadSections();
+    };
+    loadSections();
+}
+
+function loadSections() {
+    const sec = document.getElementById('sectionSelect');
+    sec.innerHTML = '';
+    courseData.modules[currentModule].sections.forEach((s, i) => {
+        sec.innerHTML += '<option value="' + i + '">' + s.title + '</option>';
+    });
+    sec.value = currentSection;
+    sec.onchange = function() {
+        currentSection = parseInt(this.value);
+        renderPresenter();
+    };
+    renderPresenter();
+}
+
+function renderPresenter() {
+    const section = courseData.modules[currentModule].sections[currentSection];
+    document.getElementById('moduleSelect').value = currentModule;
+    document.getElementById('sectionSelect').value = currentSection;
+    document.getElementById('sectionTitle').textContent = section.title;
+    document.getElementById('fullDescription').innerHTML = section.description;
+    document.getElementById('syntaxArea').textContent = section.syntax;
+    document.getElementById('scriptArea').value = section.script || '';
+    document.getElementById('saveStatus').textContent = '';
+    var diagramArea = document.getElementById('diagramArea');
+    if (typeof getDiagramSVG === 'function' && typeof sectionDiagramTypes !== 'undefined') {
+        var type = sectionDiagramTypes[section.id] || 'generic';
+        diagramArea.innerHTML = getDiagramSVG(type, section.title);
+    } else {
+        diagramArea.innerHTML = '';
+    }
+}
+
+function prevSection() {
+    if (currentSection > 0) {
+        currentSection--;
+    } else if (currentModule > 0) {
+        currentModule--;
+        currentSection = courseData.modules[currentModule].sections.length - 1;
+    }
+    loadSections();
+}
+
+function nextSection() {
+    var total = courseData.modules[currentModule].sections.length;
+    if (currentSection < total - 1) {
+        currentSection++;
+    } else if (currentModule < courseData.modules.length - 1) {
+        currentModule++;
+        currentSection = 0;
+    }
+    loadSections();
+}
+
+async function saveScript() {
+    if (!authenticated) { alert('Login First'); return; }
+    var payload = {
+        module: currentModule,
+        section: currentSection,
+        script: document.getElementById('scriptArea').value
+    };
+    var res = await fetch('/api/save-script', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    });
+    var data = await res.json();
+    document.getElementById('saveStatus').textContent = data.success ? '\u2713 Saved' : '\u2717 Failed';
+}
+</script>
+</body>
+</html>
