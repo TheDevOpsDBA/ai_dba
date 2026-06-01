@@ -414,3 +414,14 @@ select{
 .local-run-banner p{
     margin: 0;
 }
+
+.chat-msg{
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.chat-msg br{
+    display: block;
+    content: "";
+    margin: 6px 0;
+}
