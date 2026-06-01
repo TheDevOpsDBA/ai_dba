@@ -379,7 +379,7 @@ async function sendChat() {
     const chatPrompt = "You are a helpful AI and Python tutor for SQL Server DBAs learning to apply AI/ML, LangChain, RAG, and LLMs to database administration tasks. You ONLY answer questions related to Python programming, SQL Server, AI/ML, the code shown below, or the course topic. If the question is unrelated, politely decline.\n\nSection: \"" + section.title + "\"\n\nDescription:\n" + description + "\n\nCode in editor:\n`python\n" + code + "\n`\n\nExecution output:\n`\n" + output + "\n`\n\nStudent asks: \"" + question + "\"\n\nGive a clear, helpful answer considering the code, its output, and the section context. Refer to specific lines if relevant. Keep the answer concise but complete (4-6 sentences).";
 
     try {
-        const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
+        const url = "https://openrouter.ai/api/v1/chat/completions";
 
         const response = await fetch(url, {
             method: "POST",
@@ -430,5 +430,6 @@ document.addEventListener("keydown", function(e) {
         previousSection();
     }
 });
+
 
 
