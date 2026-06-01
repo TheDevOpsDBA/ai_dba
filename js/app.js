@@ -6,8 +6,8 @@ let currentSection = 0;
 
 // Gemini API Configuration
 // Key is injected at deploy time via GitHub Actions
-const GEMINI_API_KEY_INJECTED = "__GEMINI_API_KEY__";
-let GEMINI_API_KEY = GEMINI_API_KEY_INJECTED.startsWith("__") ? localStorage.getItem("gemini_api_key") || "" : GEMINI_API_KEY_INJECTED;
+const API_KEY_INJECTED = "__GEMINI_API_KEY__";
+let OPENROUTER_API_KEY = API_KEY_INJECTED.startsWith("__") ? localStorage.getItem("openrouter_api_key") || "" : API_KEY_INJECTED;
 
 async function initializeApp() {
 
@@ -358,11 +358,11 @@ async function sendChat() {
     input.value = "";
     addChatMessage(question, "user");
 
-    if (!GEMINI_API_KEY) {
+    if (!OPENROUTER_API_KEY) {
         const key = prompt("Enter the AI API key (provided by your instructor):");
         if (key && key.trim()) {
-            GEMINI_API_KEY = key.trim();
-            localStorage.setItem("gemini_api_key", GEMINI_API_KEY);
+            OPENROUTER_API_KEY = key.trim();
+            localStorage.setItem("openrouter_api_key", OPENROUTER_API_KEY);
         } else {
             addChatMessage("No API key provided. Ask your instructor for the key.", "bot");
             return;
@@ -383,7 +383,7 @@ async function sendChat() {
 
         const response = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + OPENROUTER_API_KEY, "HTTP-Referer": window.location.href, "X-Title": "AI for SQL Server DBAs" },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: chatPrompt }] }],
                 generationConfig: {
@@ -395,8 +395,8 @@ async function sendChat() {
 
         const data = await response.json();
 
-        if (data.candidates && data.candidates[0]) {
-            let answer = data.candidates[0].content.parts[0].text;
+        if (data.choices && data.choices[0]) {
+            let answer = data.choices[0].message.content;
             loadingMsg.remove();
             answer = answer
                 .replace(/\n\n/g, "<br><br>")
@@ -430,3 +430,5 @@ document.addEventListener("keydown", function(e) {
         previousSection();
     }
 });
+
+
