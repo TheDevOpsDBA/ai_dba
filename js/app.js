@@ -400,9 +400,9 @@ async function sendChat() {
             answer = answer
                 .replace(/\n\n/g, "<br><br>")
                 .replace(/\n/g, "<br>")
-                .replace(/([^]+)/g, "<code></code>")
-                .replace(/\*\*([^*]+)\*\*/g, "<strong></strong>")
-                .replace(/\*([^*]+)\*/g, "<em></em>");
+                .replace(/`([^`]+)`/g, "<code>$1</code>")
+                .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+                .replace(/\*([^*]+)\*/g, "<em>$1</em>");
             addChatMessage(answer, "bot");
         } else {
             loadingMsg.remove();
@@ -429,6 +429,7 @@ document.addEventListener("keydown", function(e) {
         previousSection();
     }
 });
+
 
 
 
