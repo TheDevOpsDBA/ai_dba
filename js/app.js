@@ -379,7 +379,7 @@ async function sendChat() {
     const chatPrompt = "You are a helpful AI and Python tutor for SQL Server DBAs learning to apply AI/ML, LangChain, RAG, and LLMs to database administration tasks. You ONLY answer questions related to Python programming, SQL Server, AI/ML, the code shown below, or the course topic. If the question is unrelated, politely decline.\n\nSection: \"" + section.title + "\"\n\nDescription:\n" + description + "\n\nCode in editor:\n`python\n" + code + "\n`\n\nExecution output:\n`\n" + output + "\n`\n\nStudent asks: \"" + question + "\"\n\nGive a clear, helpful answer considering the code, its output, and the section context. Refer to specific lines if relevant. Keep the answer concise but complete (4-6 sentences).";
 
     try {
-        var models = ["google/gemma-4-31b-it:free","nvidia/nemotron-nano-9b-v2:free","openai/gpt-oss-20b:free","google/gemma-4-26b-a4b-it:free"];
+        var models = ["openrouter/auto","nvidia/nemotron-nano-9b-v2:free","openai/gpt-oss-20b:free","google/gemma-4-26b-a4b-it:free"];
         var lastError = "";
         for (var mi = 0; mi < models.length; mi++) {
             try {
@@ -421,6 +421,7 @@ document.addEventListener("keydown", function(e) {
         previousSection();
     }
 });
+
 
 
 
