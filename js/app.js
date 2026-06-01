@@ -379,36 +379,28 @@ async function sendChat() {
     const chatPrompt = "You are a helpful AI and Python tutor for SQL Server DBAs learning to apply AI/ML, LangChain, RAG, and LLMs to database administration tasks. You ONLY answer questions related to Python programming, SQL Server, AI/ML, the code shown below, or the course topic. If the question is unrelated, politely decline.\n\nSection: \"" + section.title + "\"\n\nDescription:\n" + description + "\n\nCode in editor:\n`python\n" + code + "\n`\n\nExecution output:\n`\n" + output + "\n`\n\nStudent asks: \"" + question + "\"\n\nGive a clear, helpful answer considering the code, its output, and the section context. Refer to specific lines if relevant. Keep the answer concise but complete (4-6 sentences).";
 
     try {
-        const url = "https://openrouter.ai/api/v1/chat/completions";
-
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + OPENROUTER_API_KEY, "HTTP-Referer": window.location.href, "X-Title": "AI for SQL Server DBAs" },
-            body: JSON.stringify({
-                model: "google/gemma-4-31b-it:free",
-                messages: [{ role: "user", content: chatPrompt }],
-                max_tokens: 1024,
-                temperature: 0.7
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.choices && data.choices[0]) {
-            let answer = data.choices[0].message.content;
-            loadingMsg.remove();
-            answer = answer
-                .replace(/\n\n/g, "<br><br>")
-                .replace(/\n/g, "<br>")
-                .replace(/`([^`]+)`/g, "<code>$1</code>")
-                .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-                .replace(/\*([^*]+)\*/g, "<em>$1</em>");
-            addChatMessage(answer, "bot");
-        } else {
-            loadingMsg.remove();
-            const errMsg = data.error ? data.error.message : "No response generated";
-            addChatMessage("Error: " + errMsg, "bot");
+        var models = ["google/gemma-4-31b-it:free","nvidia/nemotron-nano-9b-v2:free","openai/gpt-oss-20b:free","google/gemma-4-26b-a4b-it:free"];
+        var lastError = "";
+        for (var mi = 0; mi < models.length; mi++) {
+            try {
+                var resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + OPENROUTER_API_KEY, "HTTP-Referer": window.location.href, "X-Title": "AI for SQL Server DBAs" },
+                    body: JSON.stringify({ model: models[mi], messages: [{ role: "user", content: chatPrompt }], max_tokens: 1024, temperature: 0.7 })
+                });
+                var data = await resp.json();
+                if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+                    var answer = data.choices[0].message.content;
+                    loadingMsg.remove();
+                    answer = answer.replace(/\n\n/g,"<br><br>").replace(/\n/g,"<br>").replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
+                    addChatMessage(answer, "bot");
+                    return;
+                }
+                lastError = data.error ? data.error.message : "Empty response";
+            } catch (err) { lastError = err.message; }
         }
+        loadingMsg.remove();
+        addChatMessage("All models busy. Try again in a moment. (" + lastError + ")", "bot");
     } catch (error) {
         loadingMsg.remove();
         addChatMessage("Connection error: " + error.message, "bot");
@@ -429,6 +421,7 @@ document.addEventListener("keydown", function(e) {
         previousSection();
     }
 });
+
 
 
 
