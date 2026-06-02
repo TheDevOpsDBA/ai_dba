@@ -21,8 +21,8 @@
 <button onclick="previousSection()">&#x2B05; Back</button>
 <button onclick="nextSection()">Next &#x27A1;</button>
 </div>
-<div class="layout">
-<div class="left-panel">
+<div class="main-container">
+<div class="left-panel" id="leftPanel">
 <h3 class="section-heading" id="sectionHeading"></h3>
 <div class="diagram-box">
 <svg viewBox="0 0 600 220" width="100%" height="220">
@@ -44,7 +44,9 @@
 <div id="description"></div>
 <div id="syntax"></div>
 </div>
-<div class="right-panel">
+<button class="panel-toggle" id="panelToggle" onclick="toggleRightPanel()">&#x25C0; Code &amp; AI</button>
+
+<div class="right-panel collapsed" id="rightPanel">
 <div id="exampleTabs"></div>
 <textarea id="editor"></textarea>
 <div class="action-row">
