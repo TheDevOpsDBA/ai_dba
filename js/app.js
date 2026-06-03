@@ -1655,83 +1655,121 @@ function showSolution() {
 const CHALLENGES = [
     {
         id: "ch1",
-        title: "Print the Current Year",
-        task: "Create a variable called `year` set to 2025.\nPrint it using an f-string: \"The year is 2025\"",
-        hints: ["Use year = 2025", "Use f\"The year is {year}\""],
-        solution: "year = 2025\nprint(f\"The year is {year}\")",
-        requirements: ["variable year", "f-string", "print"]
+        title: "Format a Server Health Line",
+        task: "Create variables: `server = \"PROD-SQL-01\"`, `cpu = 72`, `mem = 81`.\nPrint a one-line health summary using an f-string:\n  PROD-SQL-01 | CPU: 72% | MEM: 81%",
+        hints: [
+            "Three variables, then one print() call",
+            "Use f\"{server} | CPU: {cpu}% | MEM: {mem}%\""
+        ],
+        solution: "server = \"PROD-SQL-01\"\ncpu = 72\nmem = 81\nprint(f\"{server} | CPU: {cpu}% | MEM: {mem}%\")",
+        requirements: ["variable server", "variables cpu and mem", "f-string", "prints health line in correct format"]
     },
     {
         id: "ch2",
-        title: "Server Status Check",
-        task: "Create a variable `cpu` set to 88.\nWrite an if/else that prints \"ALERT\" if cpu > 85, else prints \"OK\".",
-        hints: ["Start with cpu = 88", "Use if cpu > 85:"],
-        solution: "cpu = 88\nif cpu > 85:\n    print(\"ALERT\")\nelse:\n    print(\"OK\")",
-        requirements: ["variable cpu", "if/else", "prints ALERT or OK"]
+        title: "Backup-Age Alert",
+        task: "Given `days_since_backup = 9`, write an if/elif/else that prints:\n  - \"CRITICAL\" if > 7\n  - \"WARN\" if > 3\n  - \"OK\" otherwise",
+        hints: [
+            "if days_since_backup > 7:",
+            "elif days_since_backup > 3:",
+            "else: print(\"OK\")"
+        ],
+        solution: "days_since_backup = 9\nif days_since_backup > 7:\n    print(\"CRITICAL\")\nelif days_since_backup > 3:\n    print(\"WARN\")\nelse:\n    print(\"OK\")",
+        requirements: ["variable days_since_backup", "if / elif / else", "prints CRITICAL, WARN, or OK"]
     },
     {
         id: "ch3",
-        title: "Count Servers in a List",
-        task: "Create a list with 5 server names.\nPrint how many servers are in the list using len().",
-        hints: ["servers = [\"web-01\", \"web-02\", ...]", "Use len(servers)"],
-        solution: "servers = [\"web-01\", \"web-02\", \"db-01\", \"cache-01\", \"backup-01\"]\nprint(f\"Total servers: {len(servers)}\")",
-        requirements: ["list with 5 items", "len() used", "print"]
+        title: "Slow-Query Filter",
+        task: "Given a list of query durations in milliseconds:\n  durations = [120, 850, 30, 2100, 450, 80, 3600, 5]\nUse a list comprehension to keep only queries slower than 500 ms.\nPrint the filtered list and the count.",
+        hints: [
+            "slow = [d for d in durations if d > 500]",
+            "Print both the list and len(slow)"
+        ],
+        solution: "durations = [120, 850, 30, 2100, 450, 80, 3600, 5]\nslow = [d for d in durations if d > 500]\nprint(\"Slow queries:\", slow)\nprint(\"Count:\", len(slow))",
+        requirements: ["list comprehension", "filters durations > 500", "prints filtered list", "prints count"]
     },
     {
         id: "ch4",
-        title: "Loop Through Servers",
-        task: "Create a list of 3 servers.\nLoop through them and print each server name with its index (1, 2, 3).",
-        hints: ["Use enumerate(servers, 1)", "for i, s in enumerate(...)"],
-        solution: "servers = [\"web-01\", \"db-01\", \"cache-01\"]\nfor i, server in enumerate(servers, 1):\n    print(f\"{i}. {server}\")",
-        requirements: ["list", "for loop", "enumerate or index", "prints numbered list"]
+        title: "Database Inventory Loop",
+        task: "Loop through this list of databases and print each one with its size formatted as MB:\n  databases = [(\"DBA_Monitor\", 240), (\"AdventureWorks\", 1850), (\"tempdb\", 85)]\nOutput format:\n  1. DBA_Monitor — 240 MB\n  2. AdventureWorks — 1850 MB\n  3. tempdb — 85 MB",
+        hints: [
+            "Use enumerate(databases, 1)",
+            "for i, (name, size) in enumerate(databases, 1):",
+            "Use f\"{i}. {name} — {size} MB\""
+        ],
+        solution: "databases = [(\"DBA_Monitor\", 240), (\"AdventureWorks\", 1850), (\"tempdb\", 85)]\nfor i, (name, size) in enumerate(databases, 1):\n    print(f\"{i}. {name} — {size} MB\")",
+        requirements: ["for loop", "enumerate or manual index", "tuple unpacking", "prints numbered list with MB suffix"]
     },
     {
         id: "ch5",
-        title: "Dictionary Lookup",
-        task: "Create a dictionary with keys: name, cpu, status.\nPrint the value of 'name' using bracket notation.",
-        hints: ["server = {\"name\": \"web-01\", ...}", "Use server[\"name\"]"],
-        solution: "server = {\"name\": \"web-01\", \"cpu\": 72, \"status\": \"online\"}\nprint(server[\"name\"])",
-        requirements: ["dictionary with 3 keys", "bracket access", "print"]
+        title: "Server Config Dictionary",
+        task: "Build a dict named `config` with keys:\n  server (\"PROD-SQL-01\"), max_memory_gb (32), recovery_model (\"FULL\"), backup_path (\"D:/Backups\").\nPrint each key/value pair in the form  KEY = VALUE  using a for loop.",
+        hints: [
+            "config = {\"server\": ..., \"max_memory_gb\": ..., ...}",
+            "for key, value in config.items():",
+            "print(f\"{key} = {value}\")"
+        ],
+        solution: "config = {\n    \"server\": \"PROD-SQL-01\",\n    \"max_memory_gb\": 32,\n    \"recovery_model\": \"FULL\",\n    \"backup_path\": \"D:/Backups\"\n}\nfor key, value in config.items():\n    print(f\"{key} = {value}\")",
+        requirements: ["dictionary with all 4 keys", "for loop over .items()", "prints each pair with = separator"]
     },
     {
         id: "ch6",
-        title: "Simple Function",
-        task: "Write a function called `greet(name)` that returns f\"Hello, {name}!\".\nCall it with \"Alice\" and print the result.",
-        hints: ["def greet(name):", "return f\"Hello, {name}!\""],
-        solution: "def greet(name):\n    return f\"Hello, {name}!\"\n\nresult = greet(\"Alice\")\nprint(result)",
-        requirements: ["function greet", "parameter name", "returns f-string", "prints result"]
+        title: "Reusable Health-Check Function",
+        task: "Write a function `health(cpu, mem)` that returns:\n  - \"CRITICAL\" if cpu > 90 or mem > 90\n  - \"WARN\"     if cpu > 75 or mem > 75\n  - \"OK\"       otherwise\nCall it three times: (50,60), (80,40), (95,95) and print each result.",
+        hints: [
+            "def health(cpu, mem):",
+            "Use 'or' to combine the two checks",
+            "print(health(50, 60))"
+        ],
+        solution: "def health(cpu, mem):\n    if cpu > 90 or mem > 90:\n        return \"CRITICAL\"\n    if cpu > 75 or mem > 75:\n        return \"WARN\"\n    return \"OK\"\n\nprint(health(50, 60))\nprint(health(80, 40))\nprint(health(95, 95))",
+        requirements: ["function health(cpu, mem)", "if / elif logic with or", "returns string", "three test calls printed"]
     },
     {
         id: "ch7",
-        title: "Try/Except Safety",
-        task: "Write code that tries to convert \"abc\" to an integer.\nCatch the ValueError and print \"Not a number!\".",
-        hints: ["try: int(\"abc\")", "except ValueError:"],
-        solution: "try:\n    value = int(\"abc\")\nexcept ValueError:\n    print(\"Not a number!\")",
-        requirements: ["try block", "int() conversion", "except ValueError", "prints error message"]
+        title: "Safe Float Conversion",
+        task: "You're parsing a metrics file and one value is bad: `\"NaN\"`.\nTry to convert it to a float. Catch the ValueError and print:\n  \"Skipping bad metric — could not convert to float\"\nThen continue and print \"Done\".",
+        hints: [
+            "try: float(\"NaN\") works — try \"abc\" instead, or wrap in str.lower check",
+            "Use a value that genuinely fails like \"--\"",
+            "except ValueError: print(\"Skipping...\")"
+        ],
+        solution: "raw = \"--\"\ntry:\n    value = float(raw)\n    print(\"Got\", value)\nexcept ValueError:\n    print(\"Skipping bad metric — could not convert to float\")\n\nprint(\"Done\")",
+        requirements: ["try block", "float() conversion", "except ValueError", "prints skip message", "prints Done"]
     },
     {
         id: "ch8",
-        title: "JSON Round-Trip",
-        task: "Import json.\nCreate a dict with name and age.\nConvert to JSON string, print it.\nParse it back and print the name.",
-        hints: ["import json", "json.dumps(data)", "json.loads(json_str)"],
-        solution: "import json\n\ndata = {\"name\": \"Alice\", \"age\": 30}\njson_str = json.dumps(data)\nprint(json_str)\n\nparsed = json.loads(json_str)\nprint(parsed[\"name\"])",
-        requirements: ["import json", "dictionary", "json.dumps", "json.loads", "print both"]
+        title: "Top-N Query Stats with pandas",
+        task: "Using pandas, build a DataFrame from this query data:\n  data = {\n    \"query_id\": [101, 102, 103, 104, 105],\n    \"avg_ms\":   [120, 850, 30,  2100, 450]\n  }\nSort by avg_ms descending and print the top 3 rows.",
+        hints: [
+            "import pandas as pd",
+            "df = pd.DataFrame(data)",
+            "df.sort_values('avg_ms', ascending=False).head(3)"
+        ],
+        solution: "import pandas as pd\n\ndata = {\n    \"query_id\": [101, 102, 103, 104, 105],\n    \"avg_ms\":   [120, 850, 30,  2100, 450]\n}\ndf = pd.DataFrame(data)\ntop3 = df.sort_values(\"avg_ms\", ascending=False).head(3)\nprint(top3)",
+        requirements: ["import pandas", "DataFrame from dict", "sort_values descending", "head(3)", "prints result"]
     },
     {
         id: "ch9",
-        title: "List Comprehension Filter",
-        task: "Given numbers = [10, 25, 80, 45, 92, 55, 88]\nUse a list comprehension to get only numbers > 50.\nPrint the filtered list.",
-        hints: ["[x for x in numbers if x > 50]", "Store in a variable, then print"],
-        solution: "numbers = [10, 25, 80, 45, 92, 55, 88]\nhigh = [x for x in numbers if x > 50]\nprint(high)",
-        requirements: ["list comprehension", "filter > 50", "print result"]
+        title: "JSON Backup Report",
+        task: "You're writing a tiny backup-report serialiser.\n1. Build a dict: server=\"PROD-SQL-01\", databases=[\"DBA_Monitor\", \"AdventureWorks\"], status=\"ok\".\n2. Convert it to a JSON string and print it.\n3. Parse it back and print the second database name.",
+        hints: [
+            "import json",
+            "json.dumps(report)",
+            "parsed['databases'][1]"
+        ],
+        solution: "import json\n\nreport = {\n    \"server\": \"PROD-SQL-01\",\n    \"databases\": [\"DBA_Monitor\", \"AdventureWorks\"],\n    \"status\": \"ok\"\n}\njson_str = json.dumps(report)\nprint(json_str)\n\nparsed = json.loads(json_str)\nprint(parsed[\"databases\"][1])",
+        requirements: ["import json", "dict with all 3 keys", "json.dumps", "json.loads", "prints second database"]
     },
     {
         id: "ch10",
-        title: "Format Bytes Function",
-        task: "Write a function format_size(bytes) that:\n- Returns \"X.X KB\" if bytes >= 1024\n- Returns \"X B\" otherwise\nTest with 500 and 2048.",
-        hints: ["if bytes >= 1024: return f\"{bytes/1024:.1f} KB\"", "else: return f\"{bytes} B\""],
-        solution: "def format_size(b):\n    if b >= 1024:\n        return f\"{b/1024:.1f} KB\"\n    return f\"{b} B\"\n\nprint(format_size(500))\nprint(format_size(2048))",
-        requirements: ["function format_size", "if/else for KB", "returns string", "two test calls"]
+        title: "Anomaly Flag with Threshold",
+        task: "You have a week of CPU readings:\n  cpu = [42, 51, 48, 53, 95, 47, 50]\nWrite a function `flag(values, threshold)` that returns a list of (index, value) pairs where the reading exceeded the threshold.\nCall flag(cpu, 80) and print the result.\nExpected output:  [(4, 95)]",
+        hints: [
+            "def flag(values, threshold):",
+            "Use enumerate(values) and a list comprehension",
+            "[(i, v) for i, v in enumerate(values) if v > threshold]"
+        ],
+        solution: "def flag(values, threshold):\n    return [(i, v) for i, v in enumerate(values) if v > threshold]\n\ncpu = [42, 51, 48, 53, 95, 47, 50]\nprint(flag(cpu, 80))",
+        requirements: ["function flag(values, threshold)", "uses enumerate", "list comprehension", "filters by threshold", "prints (index, value) tuples"]
     }
 ];
 
