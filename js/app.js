@@ -51,6 +51,11 @@ const BADGES = [
     { id: "champion",           name: "Course Champion",    icon: "🏆",  desc: "Complete all modules" }
 ];
 
+function getProgressKey() {
+    const cid = (window.fbHelpers && window.fbHelpers.COURSE_ID) || 'default';
+    return 'labProgress.' + cid;
+}
+
 function getProgress() {
     const defaults = {
         xp: 0, level: 1, streak: { current: 0, lastDate: "", best: 0 },
@@ -59,14 +64,24 @@ function getProgress() {
         "userName": localStorage.getItem('labUserName') || "Student"
     };
     try {
-        const saved = localStorage.getItem("pythonLabProgress");
+        const key = getProgressKey();
+        let saved = localStorage.getItem(key);
+        // One-time migration of the old non-namespaced key
+        if (!saved) {
+            const legacy = localStorage.getItem("pythonLabProgress");
+            if (legacy) {
+                saved = legacy;
+                localStorage.setItem(key, legacy);
+                localStorage.removeItem("pythonLabProgress");
+            }
+        }
         if (saved) return { ...defaults, ...JSON.parse(saved) };
     } catch (e) {}
     return defaults;
 }
 
 function saveProgress(progress) {
-    localStorage.setItem("pythonLabProgress", JSON.stringify(progress));
+    localStorage.setItem(getProgressKey(), JSON.stringify(progress));
     syncProgressToCloud(progress);
 }
 
@@ -455,13 +470,13 @@ function closeBadges() {
 function checkModuleBadges() {
     const progress = getProgress();
     const moduleMap = {
-        1:  "python-foundation",   // Module 1: Python Essentials for DBAs
-        2:  "sql-connector",       // Module 2: Connecting Python to SQL Server
-        3:  "data-wrangler",       // Module 3: Data Analysis with Pandas
-        4:  "ml-apprentice",       // Module 4: Introduction to AI & ML
-        9:  "langchain-pilot",     // Module 9: LangChain Fundamentals
-        10: "rag-engineer",        // Module 10: RAG
-        11: "agent-builder"        // Module 11: LangGraph & AI Agents
+        1:  "python-foundation",
+        2:  "sql-connector",
+        3:  "data-wrangler",
+        4:  "ml-apprentice",
+        9:  "langchain-pilot",
+        10: "rag-engineer",
+        11: "agent-builder"
     };
 
     // Check if all sections in completed modules
@@ -598,6 +613,12 @@ function bootAuth() {
 
             // Hydrate from cloud if record exists, else create one
             try {
+                // One-time migration of pre-multi-course schema
+                if (window.fbHelpers.migrateLegacyProgress) {
+                    try { await window.fbHelpers.migrateLegacyProgress(user.uid); } catch (mErr) {
+                        console.warn("Legacy progress migration skipped:", mErr);
+                    }
+                }
                 const cloud = await window.fbHelpers.loadUser(user.uid);
                 if (cloud) {
                     mergeCloudIntoLocal(cloud);
@@ -650,7 +671,7 @@ function mergeCloudIntoLocal(cloud) {
         codeRuns: Math.max(local.codeRuns || 0, cloud.codeRuns || 0),
         labsCompleted: Math.max(local.labsCompleted || 0, cloud.labsCompleted || 0)
     };
-    localStorage.setItem("pythonLabProgress", JSON.stringify(merged));
+    localStorage.setItem(getProgressKey(), JSON.stringify(merged));
 
     const localCh = JSON.parse(localStorage.getItem('completedChallenges') || '[]');
     const cloudCh = cloud.completedChallenges || [];
