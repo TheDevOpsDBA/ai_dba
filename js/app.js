@@ -872,6 +872,24 @@ function startMainApp() {
 
     // Initial save status pill state
     if (currentUser && currentUser.isGuest) showSaveStatus('local');
+
+    // Hide AI ribbon if user has dismissed it before, or auto-hide after first
+    // section navigation so it doesn't take up space forever.
+    const ribbon = document.getElementById('aiRibbon');
+    if (ribbon) {
+        if (sessionStorage.getItem('aiRibbonDismissed') === '1') {
+            ribbon.style.display = 'none';
+        } else {
+            // Auto-collapse after 60 seconds (still visible but compact)
+            setTimeout(() => ribbon.classList.add('compact'), 60000);
+        }
+    }
+}
+
+function dismissAiRibbon() {
+    const ribbon = document.getElementById('aiRibbon');
+    if (ribbon) ribbon.style.display = 'none';
+    sessionStorage.setItem('aiRibbonDismissed', '1');
 }
 
 function showAuthScreen() {
@@ -1068,8 +1086,8 @@ function renderLockedSection() {
         <div class="locked-card-icon">🔒</div>
         <div class="locked-card-title">${escapeHtml(module.title)} is part of the paid course</div>
         <p class="locked-card-text">
-            Modules 1–${PREVIEW_MODULE_LIMIT} are free for everyone. To unlock the rest, including
-            hands-on labs, the AI mentor for advanced modules, and the leaderboard challenges,
+            Modules 1–${PREVIEW_MODULE_LIMIT} are free for everyone. To unlock the rest — including
+            the AI Lab Mentor for advanced modules, hands-on challenges, and the live leaderboard —
             enrol on PowerShell Academy.
         </p>
         <div class="locked-card-actions">
@@ -1077,8 +1095,13 @@ function renderLockedSection() {
             <button class="locked-card-secondary" onclick="goToFirstUnlockedModule()">↩ Back to free modules</button>
         </div>
         <p class="locked-card-tip">
+            ⚠️ <strong>Important:</strong> when you sign up on PowerShell Academy,
+            use the <strong>same email</strong> you signed in with here (<code>${escapeHtml((currentUser && currentUser.email) || 'your-email@example.com')}</code>).
+            That's how the lab automatically unlocks for you.
+            <br><br>
             Already enrolled? Once your purchase is processed (usually within seconds),
-            this page will unlock automatically. You can also click <a href="#" onclick="recheckEntitlement(); return false;">refresh access</a>.
+            this page will unlock automatically. You can also click
+            <a href="#" onclick="recheckEntitlement(); return false;">refresh access</a>.
         </p>
     `;
 

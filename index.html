@@ -28,7 +28,17 @@ href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-d
     <div class="auth-card">
         <img src="images/Powershell Academy Logo 300-300.png" alt="PowerShell Academy" class="auth-logo">
         <h2 class="auth-title">AI for SQL Server DBAs</h2>
-        <p class="auth-subtitle">Sign in to track progress, earn badges, and join the leaderboard.</p>
+        <div class="auth-ai-banner">
+            <span class="auth-ai-icon">🤖</span>
+            <div class="auth-ai-text">
+                <strong>AI-powered hands-on lab</strong>
+                <span>Run Python in your browser, get a personal AI mentor, and earn XP for every challenge.</span>
+            </div>
+        </div>
+        <p class="auth-subtitle">
+            Sign in to track progress, unlock challenges, and join the live leaderboard.<br>
+            <strong class="auth-tip">Tip:</strong> use the <strong>same email</strong> you used to enrol on PowerShell Academy so your purchase auto-unlocks the rest of the modules.
+        </p>
 
         <button class="auth-google-btn" onclick="authSignInGoogle()">
             <span class="google-icon">G</span> Continue with Google
@@ -84,6 +94,20 @@ href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-d
     <div class="resume-actions">
         <button class="resume-yes" id="resumeYes">Continue</button>
         <button class="resume-no"  id="resumeNo">Start fresh</button>
+    </div>
+</div>
+
+<!-- AI capability ribbon — communicates the lab's value at a glance -->
+<div class="ai-ribbon" id="aiRibbon">
+    <button class="ai-ribbon-close" onclick="dismissAiRibbon()" title="Hide for this session">✕</button>
+    <div class="ai-ribbon-icon">🤖</div>
+    <div class="ai-ribbon-content">
+        <strong>AI is built into this lab</strong>
+        <ul>
+            <li><span class="ai-pill">🧠 Lab Mentor</span> answers questions about the code you're reading and gives feedback on your solutions</li>
+            <li><span class="ai-pill">🧪 Auto-graded challenges</span> evaluate your submissions and explain what to improve</li>
+            <li><span class="ai-pill">▶ Live Python</span> in the browser — no install, no setup, no account on a 3rd party</li>
+        </ul>
     </div>
 </div>
 

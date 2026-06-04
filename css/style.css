@@ -1894,3 +1894,145 @@ body {
     font-weight: 500;
 }
 .locked-card-tip a:hover { text-decoration: underline; }
+
+
+/* ============================================================ */
+/* AI CAPABILITY RIBBON — visible right below the toolbar       */
+/* ============================================================ */
+.ai-ribbon {
+    position: relative;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background:
+        linear-gradient(90deg, rgba(0, 212, 170, 0.08) 0%, rgba(99, 102, 241, 0.10) 100%),
+        #0a0f1a;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.25);
+    padding: 14px 22px 14px 18px;
+    color: #e2e8f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
+}
+.ai-ribbon-icon {
+    font-size: 32px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+    filter: drop-shadow(0 4px 8px rgba(0, 212, 170, 0.4));
+}
+.ai-ribbon-content { flex: 1; min-width: 0; }
+.ai-ribbon-content strong {
+    color: #f1f5f9;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    display: block;
+    margin-bottom: 6px;
+}
+.ai-ribbon-content ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.6;
+}
+.ai-ribbon-content li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-width: 280px;
+}
+.ai-pill {
+    background: rgba(0, 212, 170, 0.15);
+    color: #6ee7d3;
+    border: 1px solid rgba(0, 212, 170, 0.3);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.ai-ribbon-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+.ai-ribbon-close:hover { background: rgba(148, 163, 184, 0.12); color: #f1f5f9; }
+
+.ai-ribbon.compact {
+    padding: 8px 22px 8px 18px;
+}
+.ai-ribbon.compact .ai-ribbon-icon { font-size: 22px; }
+.ai-ribbon.compact .ai-ribbon-content ul { display: none; }
+.ai-ribbon.compact .ai-ribbon-content strong {
+    margin-bottom: 0;
+    font-size: 12.5px;
+}
+
+@media (max-width: 900px) {
+    .ai-ribbon-content ul { gap: 8px; }
+    .ai-ribbon-content li { min-width: 100%; }
+}
+
+/* ============================================================ */
+/* Auth screen — AI capability mini-banner inside login card    */
+/* ============================================================ */
+.auth-ai-banner {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background:
+        linear-gradient(90deg, rgba(0, 212, 170, 0.10), rgba(99, 102, 241, 0.10));
+    border: 1px solid rgba(0, 212, 170, 0.25);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 0 0 18px;
+    text-align: left;
+}
+.auth-ai-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 8px rgba(0, 212, 170, 0.35));
+}
+.auth-ai-text { display: flex; flex-direction: column; gap: 3px; }
+.auth-ai-text strong {
+    font-size: 13px;
+    color: #f1f5f9;
+    font-weight: 700;
+}
+.auth-ai-text span {
+    font-size: 11.5px;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+.auth-tip {
+    color: #fcd34d;
+    background: rgba(245, 158, 11, 0.12);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.auth-subtitle code {
+    background: #0a0f1a;
+    color: #00d4aa;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+}
