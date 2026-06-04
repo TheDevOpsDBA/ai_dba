@@ -22,6 +22,31 @@ let entitlementUnsubscribe = null;        // listener cleanup
 const PREVIEW_MODULE_LIMIT = 3;           // modules at index 0..N-1 are free; index >= N is locked
 const ENROLL_URL = "https://www.powershellacademy.com/courses/SQL-Server-News-Letter-creation-Web-App-using-Gemini-and-node-js-69a26c71b3e4737930af1c4f";
 
+// Cloudflare Worker that brokers Graphy webhooks and claim-pending requests.
+// Both halves are gated by the shared secret below.
+const WORKER_URL    = "https://graphy-enrollment-webhook.powershell4u.workers.dev";
+const WORKER_SECRET = "gly_xq7v9R2kPm8N4tH6sZ3wA1bEcF5dG0jL";
+
+async function claimPendingViaWorker(uid, email) {
+    if (!uid || !email) return;
+    try {
+        const res = await fetch(`${WORKER_URL}/claim`, {
+            method:  "POST",
+            headers: {
+                "Content-Type":     "application/json",
+                "x-webhook-secret": WORKER_SECRET
+            },
+            body: JSON.stringify({ uid, email })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data && Array.isArray(data.claimed) && data.claimed.length > 0) {
+            console.info("Claimed pending entitlements:", data.claimed);
+        }
+    } catch (e) {
+        console.warn("Worker /claim call failed:", e && e.message);
+    }
+}
+
 function hasFullAccess() {
     if (!currentEntitlement) return false;
     if (currentEntitlement.tier !== "full") return false;
@@ -675,13 +700,13 @@ function bootAuth() {
                     console.warn("Editor/chat hydrate failed:", e2);
                 }
 
-                // Claim any pending entitlement that was buffered before sign-in
+                // Claim any pending entitlement (call the Cloudflare Worker, which has admin
+                // permissions and can read pendingEntitlements). The browser can't read that
+                // path directly because rules deny it (intentional security boundary).
                 try {
-                    if (window.fbHelpers.claimPendingEntitlement) {
-                        await window.fbHelpers.claimPendingEntitlement(user.uid, user.email || "");
-                    }
+                    await claimPendingViaWorker(user.uid, user.email || "");
                 } catch (eClaim) {
-                    console.warn("claimPending failed:", eClaim);
+                    console.warn("claimPendingViaWorker failed:", eClaim);
                 }
 
                 // Hydrate entitlement state
@@ -1082,6 +1107,8 @@ async function recheckEntitlement() {
     }
     showToast('Checking access…');
     try {
+        // Attempt to claim any pending entitlement first (handles the "bought just now" case)
+        await claimPendingViaWorker(currentUser.uid, currentUser.email || "");
         currentEntitlement = await window.fbHelpers.loadEntitlement(currentUser.uid);
         if (hasFullAccess()) {
             showToast('🔓 Access granted!');
