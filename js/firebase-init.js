@@ -358,6 +358,57 @@ window.fbHelpers = {
             editorState: edSnap.exists() ? edSnap.val() : {},
             chatHistory: chatSnap.exists() ? chatSnap.val() : {}
         };
+    },
+
+    // ===== ENTITLEMENTS =====
+
+    // Read the user's entitlement for the current course.
+    // Returns { tier: "full" | "preview", source, courseName, grantedAt, expiresAt }
+    loadEntitlement: async (uid) => {
+        try {
+            const snap = await get(ref(db, `users/${uid}/entitlements/${COURSE_ID}`));
+            if (!snap.exists()) return null;
+            return snap.val();
+        } catch (e) {
+            console.warn("loadEntitlement failed:", e && e.message);
+            return null;
+        }
+    },
+
+    // Subscribe to live entitlement changes (so a fresh purchase unlocks the lab
+    // without the user having to refresh).
+    subscribeEntitlement: (uid, cb) => {
+        return onValue(ref(db, `users/${uid}/entitlements/${COURSE_ID}`), (snap) => {
+            cb(snap.exists() ? snap.val() : null);
+        });
+    },
+
+    // Look in pendingEntitlements/{sanitisedEmail}/{courseId} for a grant the
+    // webhook stored before the user had signed in to the lab. If found, copy
+    // it into users/{uid}/entitlements/{courseId} and clear the pending bucket.
+    claimPendingEntitlement: async (uid, email) => {
+        if (!email) return null;
+        const safe = email.toLowerCase().replace(/[.#$\/\[\]]/g, "_");
+        try {
+            const snap = await get(ref(db, `pendingEntitlements/${safe}/${COURSE_ID}`));
+            if (!snap.exists()) return null;
+            const pending = snap.val();
+            // Promote into the user's entitlement record
+            await set(ref(db, `users/${uid}/entitlements/${COURSE_ID}`), {
+                tier:       pending.tier || "full",
+                source:     pending.source || "graphy",
+                courseName: pending.courseName || "",
+                grantedAt:  pending.grantedAt || Date.now(),
+                expiresAt:  pending.expiresAt || null,
+                claimedFromPending: true
+            });
+            // Clear the pending bucket so it doesn't get applied twice
+            await set(ref(db, `pendingEntitlements/${safe}/${COURSE_ID}`), null);
+            return pending;
+        } catch (e) {
+            console.warn("claimPendingEntitlement failed:", e && e.message);
+            return null;
+        }
     }
 };
 
