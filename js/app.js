@@ -27,9 +27,28 @@ let labSession = null; // { valid: true, email, courseId } or { valid: false, re
 
 async function checkLabSession() {
     try {
-        const res = await fetch(`${WORKER_BASE}/verify`, {
-            credentials: "include" // sends the HttpOnly session cookie
-        });
+        // Get token from URL (fresh redirect from Worker) or sessionStorage (returning within same tab)
+        const urlParams = new URLSearchParams(window.location.search);
+        let token = urlParams.get('session_token') || sessionStorage.getItem('lab_session_token') || '';
+
+        // Store token in sessionStorage for subsequent checks within this tab session
+        if (token) {
+            sessionStorage.setItem('lab_session_token', token);
+            // Clean the URL so the token doesn't sit in the address bar
+            if (urlParams.get('session_token')) {
+                urlParams.delete('session_token');
+                urlParams.delete('access');
+                const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', cleanUrl);
+            }
+        }
+
+        if (!token) {
+            labSession = { valid: false, reason: "no-token" };
+            return labSession;
+        }
+
+        const res = await fetch(`${WORKER_BASE}/verify?token=${encodeURIComponent(token)}`);
         labSession = await res.json();
     } catch (e) {
         console.warn("Session verify failed:", e);
@@ -615,20 +634,6 @@ async function initializeApp() {
     // Check Cloudflare Worker session (cookie-based, from Graphy /launch)
     // This determines whether modules 3+ are unlocked.
     await checkLabSession();
-
-    // Handle URL access parameters from the Worker redirect
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessParam = urlParams.get('access');
-    if (accessParam === 'granted') {
-        // Clean URL
-        window.history.replaceState({}, '', window.location.pathname);
-    } else if (accessParam === 'denied') {
-        const reason = urlParams.get('reason');
-        if (reason === 'not-enrolled') {
-            showToast('⚠️ You are not enrolled in this course. Enrol on PowerShell Academy first.');
-        }
-        window.history.replaceState({}, '', window.location.pathname);
-    }
 
     // Wait for Firebase to be ready, then check auth state.
     // If Firebase never loads (CDN blocked, etc.) fall back to local-only mode after 4s.
