@@ -631,9 +631,34 @@ async function initializeApp() {
 
     pyodide = await loadPyodide();
 
-    // Check Cloudflare Worker session (cookie-based, from Graphy /launch)
+    // Check Cloudflare Worker session (from Graphy /launch)
     // This determines whether modules 3+ are unlocked.
     await checkLabSession();
+
+    // If we have a valid Worker session, also sign into Firebase silently
+    // so that leaderboard, XP, badges, and persistence all work.
+    if (hasFullAccess() && labSession.email) {
+        try {
+            const tokenRes = await fetch(`${WORKER_BASE}/firebase-token?email=${encodeURIComponent(labSession.email)}&token=${encodeURIComponent(sessionStorage.getItem('lab_session_token') || '')}`);
+            const tokenData = await tokenRes.json();
+            if (tokenData.firebaseToken && window.fbHelpers && window.fbHelpers.signInWithCustomToken) {
+                await window.fbHelpers.signInWithCustomToken(tokenData.firebaseToken);
+                // Now Firebase is active — leaderboard, XP, persistence all work
+                const user = window.fbAuth && window.fbAuth.currentUser;
+                if (user) {
+                    currentUser = {
+                        uid: user.uid,
+                        displayName: user.displayName || labSession.email.split('@')[0],
+                        email: user.email || labSession.email,
+                        isGuest: false
+                    };
+                    localStorage.setItem('labUserName', currentUser.displayName);
+                }
+            }
+        } catch (e) {
+            console.warn("Firebase auto-sign-in skipped:", e && e.message);
+        }
+    }
 
     // Wait for Firebase to be ready, then check auth state.
     // If Firebase never loads (CDN blocked, etc.) fall back to local-only mode after 4s.
