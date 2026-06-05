@@ -176,13 +176,13 @@ const RESUME_MAX_AGE_DAYS = 30;
 
 // --- Last session (where the user left off) ---
 function saveLastSession(moduleIdx, sectionIdx) {
+    const mod = courseData.modules[moduleIdx];
+    const sec = mod && mod.sections[sectionIdx];
     const payload = {
         moduleIdx,
         sectionIdx,
-        moduleId: courseData.modules[moduleIdx] ? courseData.modules[moduleIdx].id : '',
-        sectionId: courseData.modules[moduleIdx] && courseData.modules[moduleIdx].sections[sectionIdx]
-            ? courseData.modules[moduleIdx].sections[sectionIdx].id
-            : '',
+        moduleId: (mod && mod.id) || '',
+        sectionId: (sec && sec.id) || '',
         updatedAt: Date.now()
     };
     localStorage.setItem(STORAGE_KEYS.lastSession, JSON.stringify(payload));
