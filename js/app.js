@@ -16,42 +16,30 @@ let lastSessionSaveTimer = null; // debounced last-session save
 let chatHistory = [];            // in-memory current section's chat (synced w/ localStorage)
 let cloudHydrated = false;       // becomes true once cloud data has been merged in
 
-// Entitlement state for the current course
-let currentEntitlement = null;            // { tier: "full"|"preview", source, ... } or null
-let entitlementUnsubscribe = null;        // listener cleanup
+// Entitlement state for the current course (now handled by Worker session)
 const PREVIEW_MODULE_LIMIT = 3;           // modules at index 0..N-1 are free; index >= N is locked
 const ENROLL_URL = "https://www.powershellacademy.com/courses/SQL-Server-News-Letter-creation-Web-App-using-Gemini-and-node-js-69a26c71b3e4737930af1c4f";
 
-// Cloudflare Worker that brokers Graphy webhooks and claim-pending requests.
-// Both halves are gated by the shared secret below.
-const WORKER_URL    = "https://graphy-enrollment-webhook.powershell4u.workers.dev";
-const WORKER_SECRET = "gly_xq7v9R2kPm8N4tH6sZ3wA1bEcF5dG0jL";
+// Cloudflare Worker — session-based access (replaces Firebase entitlements)
+const WORKER_BASE = "https://graphy-enrollment-webhook.powershell4u.workers.dev";
 
-async function claimPendingViaWorker(uid, email) {
-    if (!uid || !email) return;
+let labSession = null; // { valid: true, email, courseId } or { valid: false, reason }
+
+async function checkLabSession() {
     try {
-        const res = await fetch(`${WORKER_URL}/claim`, {
-            method:  "POST",
-            headers: {
-                "Content-Type":     "application/json",
-                "x-webhook-secret": WORKER_SECRET
-            },
-            body: JSON.stringify({ uid, email })
+        const res = await fetch(`${WORKER_BASE}/verify`, {
+            credentials: "include" // sends the HttpOnly session cookie
         });
-        const data = await res.json().catch(() => ({}));
-        if (data && Array.isArray(data.claimed) && data.claimed.length > 0) {
-            console.info("Claimed pending entitlements:", data.claimed);
-        }
+        labSession = await res.json();
     } catch (e) {
-        console.warn("Worker /claim call failed:", e && e.message);
+        console.warn("Session verify failed:", e);
+        labSession = { valid: false, reason: "network-error" };
     }
+    return labSession;
 }
 
 function hasFullAccess() {
-    if (!currentEntitlement) return false;
-    if (currentEntitlement.tier !== "full") return false;
-    if (currentEntitlement.expiresAt && Date.now() > currentEntitlement.expiresAt) return false;
-    return true;
+    return labSession && labSession.valid === true;
 }
 
 function isModuleLocked(moduleIdx) {
@@ -624,6 +612,24 @@ async function initializeApp() {
 
     pyodide = await loadPyodide();
 
+    // Check Cloudflare Worker session (cookie-based, from Graphy /launch)
+    // This determines whether modules 3+ are unlocked.
+    await checkLabSession();
+
+    // Handle URL access parameters from the Worker redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessParam = urlParams.get('access');
+    if (accessParam === 'granted') {
+        // Clean URL
+        window.history.replaceState({}, '', window.location.pathname);
+    } else if (accessParam === 'denied') {
+        const reason = urlParams.get('reason');
+        if (reason === 'not-enrolled') {
+            showToast('⚠️ You are not enrolled in this course. Enrol on PowerShell Academy first.');
+        }
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+
     // Wait for Firebase to be ready, then check auth state.
     // If Firebase never loads (CDN blocked, etc.) fall back to local-only mode after 4s.
     if (window.fbHelpers) {
@@ -727,48 +733,8 @@ function bootAuth() {
                     console.warn("Editor/chat hydrate failed:", e2);
                 }
 
-                // Claim any pending entitlement (call the Cloudflare Worker, which has admin
-                // permissions and can read pendingEntitlements). The browser can't read that
-                // path directly because rules deny it (intentional security boundary).
-                try {
-                    await claimPendingViaWorker(user.uid, user.email || "");
-                } catch (eClaim) {
-                    console.warn("claimPendingViaWorker failed:", eClaim);
-                }
-
-                // Hydrate entitlement state
-                try {
-                    if (window.fbHelpers.loadEntitlement) {
-                        currentEntitlement = await window.fbHelpers.loadEntitlement(user.uid);
-                    }
-                    if (window.fbHelpers.subscribeEntitlement) {
-                        // Live updates — if the webhook fires while the user has the tab open,
-                        // the lock card disappears as soon as the entitlement lands.
-                        if (entitlementUnsubscribe) entitlementUnsubscribe();
-                        entitlementUnsubscribe = window.fbHelpers.subscribeEntitlement(user.uid, (ent) => {
-                            const wasLocked  = !hasFullAccess();
-                            currentEntitlement = ent;
-                            const nowUnlocked = hasFullAccess();
-                            // Rebuild module dropdown labels so 🔒 marks update
-                            if (typeof loadModules === 'function' && document.getElementById('moduleSelect')) {
-                                // Cheap re-label without full reload
-                                const sel = document.getElementById('moduleSelect');
-                                Array.from(sel.options).forEach((opt, i) => {
-                                    const m = courseData.modules[i];
-                                    if (!m) return;
-                                    opt.textContent = (isModuleLocked(i) ? '🔒 ' : '') + m.title;
-                                    opt.style.color = isModuleLocked(i) ? '#94a3b8' : '';
-                                });
-                            }
-                            if (wasLocked && nowUnlocked) {
-                                showToast('🔓 Course unlocked! Welcome.');
-                                renderSection(); // refresh current view
-                            }
-                        });
-                    }
-                } catch (eEnt) {
-                    console.warn("entitlement hydrate failed:", eEnt);
-                }
+                // Session-based access now handled by checkLabSession() in initializeApp.
+                // Firebase entitlements are no longer used for module locking.
 
                 cloudHydrated = true;
             } catch (e) {
@@ -899,16 +865,22 @@ function startMainApp() {
 
     // Guest preview mode: hide authenticated-only UI
     if (!currentUser) {
-        const hide = (sel) => { const el = document.querySelector(sel); if (el) el.style.display = 'none'; };
-        hide('.leaderboard-btn');
-        hide('.signout-btn');
-        hide('.reset-btn');
-        hide('.badge-btn');
-        hide('.streak-display');
-        hide('.xp-bar-container');
-        hide('.xp-text');
-        hide('.xp-level');
-        hide('.save-status');
+        // If we have a valid Worker session, show email from that
+        if (hasFullAccess() && labSession.email) {
+            const nameEl = document.getElementById('userName');
+            if (nameEl) nameEl.textContent = '👤 ' + labSession.email;
+        } else {
+            const hide = (sel) => { const el = document.querySelector(sel); if (el) el.style.display = 'none'; };
+            hide('.leaderboard-btn');
+            hide('.signout-btn');
+            hide('.reset-btn');
+            hide('.badge-btn');
+            hide('.streak-display');
+            hide('.xp-bar-container');
+            hide('.xp-text');
+            hide('.xp-level');
+            hide('.save-status');
+        }
     }
 
     // Surface the resume banner shortly after first render
@@ -1165,23 +1137,18 @@ function goToFirstUnlockedModule() {
 }
 
 async function recheckEntitlement() {
-    if (!currentUser || !window.fbHelpers || !window.fbHelpers.loadEntitlement) {
-        showToast('Sign in to refresh your access.');
-        return;
-    }
     showToast('Checking access…');
     try {
-        // Attempt to claim any pending entitlement first (handles the "bought just now" case)
-        await claimPendingViaWorker(currentUser.uid, currentUser.email || "");
-        currentEntitlement = await window.fbHelpers.loadEntitlement(currentUser.uid);
+        await checkLabSession();
         if (hasFullAccess()) {
-            showToast('🔓 Access granted!');
+            showToast('🔓 Access granted! Modules unlocked.');
+            loadModules();
             renderSection();
         } else {
-            showToast('No active entitlement found yet. Try again in a moment.');
+            showToast('No active session. Launch the lab from inside your course on PowerShell Academy.');
         }
     } catch (e) {
-        showToast('Could not check access — please refresh the page.');
+        showToast('Could not check access — please try again.');
     }
 }
 
