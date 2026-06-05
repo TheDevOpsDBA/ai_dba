@@ -635,31 +635,6 @@ async function initializeApp() {
     // This determines whether modules 3+ are unlocked.
     await checkLabSession();
 
-    // If we have a valid Worker session, also sign into Firebase silently
-    // so that leaderboard, XP, badges, and persistence all work.
-    if (hasFullAccess() && labSession.email) {
-        try {
-            const tokenRes = await fetch(`${WORKER_BASE}/firebase-token?email=${encodeURIComponent(labSession.email)}&token=${encodeURIComponent(sessionStorage.getItem('lab_session_token') || '')}`);
-            const tokenData = await tokenRes.json();
-            if (tokenData.firebaseToken && window.fbHelpers && window.fbHelpers.signInWithCustomToken) {
-                await window.fbHelpers.signInWithCustomToken(tokenData.firebaseToken);
-                // Now Firebase is active — leaderboard, XP, persistence all work
-                const user = window.fbAuth && window.fbAuth.currentUser;
-                if (user) {
-                    currentUser = {
-                        uid: user.uid,
-                        displayName: user.displayName || labSession.email.split('@')[0],
-                        email: user.email || labSession.email,
-                        isGuest: false
-                    };
-                    localStorage.setItem('labUserName', currentUser.displayName);
-                }
-            }
-        } catch (e) {
-            console.warn("Firebase auto-sign-in skipped:", e && e.message);
-        }
-    }
-
     // Wait for Firebase to be ready, then check auth state.
     // If Firebase never loads (CDN blocked, etc.) fall back to local-only mode after 4s.
     if (window.fbHelpers) {
@@ -775,9 +750,23 @@ function bootAuth() {
             hideBootSplash();
             startMainApp();
         } else {
-            // Not signed in — start in guest preview mode.
-            // No login screen shown. Modules 0-2 are accessible as preview.
-            // Locked modules direct the user to enrol on Graphy.
+            // Not signed in — if we have a valid Worker session, auto-sign-in to Firebase
+            if (hasFullAccess() && labSession && labSession.email) {
+                try {
+                    const sessionToken = sessionStorage.getItem('lab_session_token') || '';
+                    const tokenRes = await fetch(`${WORKER_BASE}/firebase-token?email=${encodeURIComponent(labSession.email)}&token=${encodeURIComponent(sessionToken)}`);
+                    const tokenData = await tokenRes.json();
+                    if (tokenData.firebaseToken && window.fbHelpers && window.fbHelpers.signInWithCustomToken) {
+                        await window.fbHelpers.signInWithCustomToken(tokenData.firebaseToken);
+                        // onAuthStateChanged will fire again with the user — let it handle the rest
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Firebase auto-sign-in skipped:", e && e.message);
+                }
+            }
+
+            // No Worker session or Firebase sign-in failed — start in guest preview mode.
             currentUser = null;
             hideBootSplash();
             hideAuthScreen();
