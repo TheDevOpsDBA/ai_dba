@@ -13,7 +13,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/fireba
 import {
     getAuth,
     setPersistence,
-    browserLocalPersistence,
+    inMemoryPersistence,
     onAuthStateChanged,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -49,7 +49,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-setPersistence(auth, browserLocalPersistence).catch((err) => {
+setPersistence(auth, inMemoryPersistence).catch((err) => {
     console.warn("setPersistence failed:", err);
 });
 

@@ -407,9 +407,14 @@ function updateGamificationUI() {
     // Show user name
     const nameEl = document.getElementById('userName');
     if (nameEl) {
-        const name = localStorage.getItem('labUserName') || 'Student';
-        nameEl.textContent = '👤 ' + name;
-        nameEl.onclick = function() {
+        if (!currentUser) {
+            nameEl.textContent = '👁 Preview Mode';
+            nameEl.onclick = null;
+            nameEl.title = 'Enrol on PowerShell Academy to get full access';
+        } else {
+            const name = localStorage.getItem('labUserName') || 'Student';
+            nameEl.textContent = '👤 ' + name;
+            nameEl.onclick = function() {
             const newName = prompt('Change your display name:', name);
             if (newName && newName.trim()) {
                 const trimmed = newName.trim();
@@ -422,6 +427,7 @@ function updateGamificationUI() {
                 }
             }
         };
+        }
     }
 }
 
@@ -773,10 +779,13 @@ function bootAuth() {
             hideBootSplash();
             startMainApp();
         } else {
-            // Signed out — show login (guest still allowed)
+            // Not signed in — start in guest preview mode.
+            // No login screen shown. Modules 0-2 are accessible as preview.
+            // Locked modules direct the user to enrol on Graphy.
             currentUser = null;
             hideBootSplash();
-            showAuthScreen();
+            hideAuthScreen();
+            startMainApp();
         }
     });
 }
@@ -888,8 +897,22 @@ function startMainApp() {
     updateGamificationUI();
     updateProgress();
 
+    // Guest preview mode: hide authenticated-only UI
+    if (!currentUser) {
+        const hide = (sel) => { const el = document.querySelector(sel); if (el) el.style.display = 'none'; };
+        hide('.leaderboard-btn');
+        hide('.signout-btn');
+        hide('.reset-btn');
+        hide('.badge-btn');
+        hide('.streak-display');
+        hide('.xp-bar-container');
+        hide('.xp-text');
+        hide('.xp-level');
+        hide('.save-status');
+    }
+
     // Surface the resume banner shortly after first render
-    setTimeout(maybeShowResumeBanner, 400);
+    if (currentUser) setTimeout(maybeShowResumeBanner, 400);
 
     // Initial save status pill state
     if (currentUser && currentUser.isGuest) showSaveStatus('local');
@@ -901,7 +924,6 @@ function startMainApp() {
         if (sessionStorage.getItem('aiRibbonDismissed') === '1') {
             ribbon.style.display = 'none';
         } else {
-            // Auto-collapse after 60 seconds (still visible but compact)
             setTimeout(() => ribbon.classList.add('compact'), 60000);
         }
     }
@@ -1105,24 +1127,22 @@ function renderLockedSection() {
     card.style.display = 'block';
     card.innerHTML = `
         <div class="locked-card-icon">🔒</div>
-        <div class="locked-card-title">${escapeHtml(module.title)} is part of the paid course</div>
+        <div class="locked-card-title">${escapeHtml(module.title)} — Premium Content</div>
         <p class="locked-card-text">
-            Modules 1–${PREVIEW_MODULE_LIMIT} are free for everyone. To unlock the rest — including
-            the AI Lab Mentor for advanced modules, hands-on challenges, and the live leaderboard —
-            enrol on PowerShell Academy.
+            Modules 1–${PREVIEW_MODULE_LIMIT} are free to preview. To unlock the full course — including
+            the AI Lab Mentor, hands-on challenges, and the live leaderboard — enrol on PowerShell Academy.
         </p>
         <div class="locked-card-actions">
             <a href="${ENROLL_URL}" target="_blank" class="locked-card-cta">🚀 Enrol on PowerShell Academy</a>
             <button class="locked-card-secondary" onclick="goToFirstUnlockedModule()">↩ Back to free modules</button>
         </div>
         <p class="locked-card-tip">
-            ⚠️ <strong>Important:</strong> when you sign up on PowerShell Academy,
-            use the <strong>same email</strong> you signed in with here (<code>${escapeHtml((currentUser && currentUser.email) || 'your-email@example.com')}</code>).
-            That's how the lab automatically unlocks for you.
+            <strong>How to access:</strong>
+            <br>1. Enrol in the course on <a href="${ENROLL_URL}" target="_blank">PowerShell Academy</a>
+            <br>2. Open the lab from inside your course (click <strong>"🚀 Open the Lab"</strong> button in any lesson)
+            <br>3. You'll land here signed in with all modules unlocked
             <br><br>
-            Already enrolled? Once your purchase is processed (usually within seconds),
-            this page will unlock automatically. You can also click
-            <a href="#" onclick="recheckEntitlement(); return false;">refresh access</a>.
+            The lab can only be accessed through your enrolled course — this ensures only active students get access.
         </p>
     `;
 
