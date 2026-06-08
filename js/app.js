@@ -1003,16 +1003,19 @@ async function authSignInGuest() {
 }
 
 async function authSignOut() {
-    if (!confirm('Sign out of the lab? Your progress is saved to the cloud and will reload when you sign back in.')) return;
-    if (!window.fbHelpers) {
-        // Local-only fallback mode
-        location.reload();
-        return;
+    if (!confirm('Sign out? You will be redirected to PowerShell Academy.')) return;
+
+    // Clear the Worker session token from sessionStorage
+    sessionStorage.removeItem('lab_session_token');
+
+    // Sign out of Firebase
+    if (window.fbHelpers) {
+        try { await window.fbHelpers.signOut(); } catch (e) {}
     }
-    try {
-        await window.fbHelpers.signOut();
-    } catch (e) {}
-    location.reload();
+
+    // Redirect to the Worker's logout endpoint which clears cookies
+    // and then redirects to powershellacademy.com
+    window.location.href = "https://graphy-enrollment-webhook.powershell4u.workers.dev/sso/logout";
 }
 
 function friendlyAuthError(err) {
