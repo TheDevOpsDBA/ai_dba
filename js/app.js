@@ -879,6 +879,7 @@ function startMainApp() {
     }
 
     loadModules();
+    buildCourseSidebar();
     updateGamificationUI();
     updateProgress();
 
@@ -925,6 +926,123 @@ function dismissAiRibbon() {
     if (ribbon) ribbon.style.display = 'none';
     sessionStorage.setItem('aiRibbonDismissed', '1');
 }
+
+// ===== COURSE SIDEBAR =====
+
+function buildCourseSidebar() {
+    const nav = document.getElementById("sidebarNav");
+    if (!nav) return;
+    nav.innerHTML = "";
+
+    const progress = getProgress();
+    const completedSections = progress.completedSections || [];
+
+    courseData.modules.forEach((module, mIndex) => {
+        const locked = isModuleLocked(mIndex);
+        const moduleDiv = document.createElement("div");
+        moduleDiv.className = "sidebar-module" + (mIndex === currentModule ? " expanded" : "") + (locked ? " locked" : "");
+        moduleDiv.dataset.moduleIndex = mIndex;
+
+        const header = document.createElement("div");
+        header.className = "sidebar-module-header" + (mIndex === currentModule ? " active" : "") + (locked ? " locked" : "");
+        const lockIcon = locked ? '\uD83D\uDD12 ' : '';
+        header.innerHTML = '<span class="sidebar-module-toggle">\u25B6</span><span class="sidebar-module-title">' + lockIcon + module.title + '</span>';
+        header.onclick = () => toggleSidebarModule(mIndex);
+
+        const sections = document.createElement("div");
+        sections.className = "sidebar-sections";
+
+        module.sections.forEach((section, sIndex) => {
+            const item = document.createElement("div");
+            item.className = "sidebar-section-item"
+                + (mIndex === currentModule && sIndex === currentSection ? " active" : "")
+                + (completedSections.includes(section.id) ? " completed" : "")
+                + (locked ? " locked" : "");
+            item.textContent = section.title;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                sidebarNavigateTo(mIndex, sIndex);
+            };
+            sections.appendChild(item);
+        });
+
+        moduleDiv.appendChild(header);
+        moduleDiv.appendChild(sections);
+        nav.appendChild(moduleDiv);
+    });
+}
+
+function toggleSidebarModule(mIndex) {
+    const nav = document.getElementById("sidebarNav");
+    const modules = nav.querySelectorAll(".sidebar-module");
+    const target = modules[mIndex];
+    if (target) {
+        target.classList.toggle("expanded");
+    }
+}
+
+function sidebarNavigateTo(mIndex, sIndex) {
+    currentModule = mIndex;
+    currentSection = sIndex;
+    loadSections();
+    updateSidebarHighlight();
+}
+
+function updateSidebarHighlight() {
+    const nav = document.getElementById("sidebarNav");
+    if (!nav) return;
+
+    const progress = getProgress();
+    const completedSections = progress.completedSections || [];
+
+    nav.querySelectorAll(".sidebar-module-header").forEach((header, i) => {
+        header.classList.toggle("active", i === currentModule);
+    });
+
+    nav.querySelectorAll(".sidebar-module").forEach((mod, i) => {
+        if (i === currentModule) {
+            mod.classList.add("expanded");
+        }
+    });
+
+    nav.querySelectorAll(".sidebar-module").forEach((mod, mIndex) => {
+        mod.querySelectorAll(".sidebar-section-item").forEach((item, sIndex) => {
+            item.classList.toggle("active", mIndex === currentModule && sIndex === currentSection);
+            const section = courseData.modules[mIndex] && courseData.modules[mIndex].sections[sIndex];
+            if (section) {
+                item.classList.toggle("completed", completedSections.includes(section.id));
+            }
+        });
+    });
+}
+
+function toggleCourseSidebar() {
+    const sidebar = document.getElementById("courseSidebar");
+    const openBtn = document.getElementById("sidebarOpenBtn");
+    const backdrop = document.getElementById("sidebarBackdrop");
+    const isMobile = window.innerWidth <= 768;
+
+    if (!sidebar) return;
+
+    if (isMobile) {
+        sidebar.classList.toggle("mobile-open");
+        if (backdrop) backdrop.classList.toggle("active");
+        if (sidebar.classList.contains("mobile-open")) {
+            openBtn.style.display = "none";
+        } else {
+            openBtn.style.display = "block";
+        }
+    } else {
+        sidebar.classList.toggle("collapsed");
+        if (sidebar.classList.contains("collapsed")) {
+            openBtn.style.display = "block";
+        } else {
+            openBtn.style.display = "none";
+        }
+    }
+}
+
+// ===== END COURSE SIDEBAR =====
 
 function showAuthScreen() {
     const overlay = document.getElementById('authOverlay');
@@ -1081,6 +1199,7 @@ function loadSections() {
     });
 
     sectionSelect.value = currentSection;
+    updateSidebarHighlight();
 
     sectionSelect.onchange = function () {
 
@@ -1165,6 +1284,7 @@ async function recheckEntitlement() {
         if (hasFullAccess()) {
             showToast('🔓 Access granted! Modules unlocked.');
             loadModules();
+            if (typeof buildCourseSidebar === 'function') buildCourseSidebar();
             renderSection();
         } else {
             showToast('No active session. Launch the lab from inside your course on PowerShell Academy.');
